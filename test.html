@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="snooze.js"></script>
+    <script>
+        snooze.guards['myFunction'] = function(data) {
+            return data;
+        };
+    </script>
+    <title>Snooze Testbed</title>
+</head>
+
+<body>
+    <script type="text/snooze" data-pipe="http://jsonplaceholder.typicode.com/posts" data-guard="myFunction">
+        <~ for (var index in this.data) {~>
+            <ul>
+                <li>userID: <~ this.data[index].id ~></li>
+                <li>Title: <~ this.data[index].title ~></li>
+                <li>Body: <~ this.data[index].body ~></li>
+            </ul>
+        <~ } ~>
+    </script>
+</body>
+
+</html>
