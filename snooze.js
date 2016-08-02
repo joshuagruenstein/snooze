@@ -1,5 +1,5 @@
 var snooze = {
-    snoozes: null,
+    snoozes: [],
     pipes: {},
     guards: {},
     withID: function(id) {
@@ -11,19 +11,24 @@ var snooze = {
         var re = /<~([^%>]+)?~>/g;
         var reExp = /(^( )?(if|for|else|switch|case|break|{|}))(.*)?/g;
         var code = 'var r=[];\n', cursor = 0, match;
-        var add = function(line, js) {
-            js? (code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n') :
-                (code += line != '' ? 'r.push("' + line.replace(/"/g, '\\"') + '");\n' : '');
+
+        function add(line, js) {
+            if (js) code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n'
+            else if (line != '') code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n'
             return add;
         }
+
         while(match = re.exec(this.innerHTML)) {
             add(this.innerHTML.slice(cursor, match.index))(match[1], true);
             cursor = match.index + match[0].length;
         }
+
         add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
         code += 'return r.join("");';
 
-        this.dom.innerHTML = new Function(code.replace(/[\r\t\n]/g, '')).apply(this);
+        this.dom.innerHTML = new Function(
+            code.replace(/[\r\t\n]/g, '')
+        ).apply(this);
     },
     req: function(type, url, callback, data) {
         xhr = new XMLHttpRequest();
