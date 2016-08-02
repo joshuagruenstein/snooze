@@ -8,16 +8,18 @@ var snooze = {
         });
     },
     gen: function() {
-        var re = /<~([^%>]+)?~>/g;
-        var reExp = /(^( )?(if|for|else|switch|case|break|{|}))(.*)?/g;
-        var code = 'var r=[];\n', cursor = 0, match;
+        var re = new RegExp("<~([^%>]+)?~>","g");
+        var reExp = new RegExp("(^( )?(if|for|else|switch|case|break|{|}))(.*)?","g");
+        var code = "var r=[];\n";
+        var cursor = 0;
 
         function add(line, js) {
-            if (js) code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n'
-            else if (line != '') code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n'
+            if (js) code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n';
+            else if (line !== '') code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n';
             return add;
         }
 
+        var match;
         while(match = re.exec(this.innerHTML)) {
             add(this.innerHTML.slice(cursor, match.index))(match[1], true);
             cursor = match.index + match[0].length;
@@ -31,7 +33,7 @@ var snooze = {
         ).apply(this);
     },
     req: function(type, url, callback, data) {
-        xhr = new XMLHttpRequest();
+        var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == 200)
                 callback(JSON.parse(xhr.responseText));
@@ -50,17 +52,17 @@ var snooze = {
         if (pipeName.indexOf("/") != -1) {
             return function(callback) {
                 this.req("GET", pipeName, callback);
-            }.bind(this)
+            }.bind(this);
         } else if (typeof(this.pipes[pipeName]) === "object") {
             return function(callback) {
-                callback(this)
+                callback(this);
             }.bind(this.pipes[pipeName]);
         } else return this.pipes[pipeName];
     },
     init: function() {
-        scripts = document.getElementsByTagName("script");
+        var scripts = document.getElementsByTagName("script");
         this.snooze.snoozes = Array.prototype.filter.call(scripts, function(tag) {
-            return tag.type === "text/snooze"
+            return tag.type === "text/snooze";
         });
 
         this.snooze.snoozes.forEach(function(snooze) {
@@ -75,12 +77,12 @@ var snooze = {
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
 
-            if (snooze.getAttribute("data-guard") == null)
-                snooze.guard = function(data) {return data};
-            else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
+            if (snooze.getAttribute("data-guard") === null) {
+                snooze.guard = function(data) { return data; };
+            } else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
 
             snooze.period = snooze.getAttribute("data-period");
-            if (snooze.period == null) snooze.period = 30;
+            if (snooze.period === null) snooze.period = 30;
             else if (snooze.period !== "none") {
                 setInterval(snooze.refresh, snooze.period*1000);
             } snooze.refresh();
