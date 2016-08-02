@@ -20,13 +20,13 @@ var snooze = {
 
         this.dom.innerHTML = new Function(code.replace(/[\r\t\n]/g, '')).apply(this);
     },
-    GET: function(url, callback) {
-        var xhr = new XMLHttpRequest();
+    req: function(type, url, callback, data) {
+        xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == 200)
                 callback(JSON.parse(xhr.responseText));
-        }; xhr.open('GET', url);
-        xhr.send(null);
+        }; xhr.open(type, url, true);
+        xhr.send(JSON.stringify(data));
     },
     refresh: function() {
         this.pipe(function(data) {
@@ -48,7 +48,7 @@ var snooze = {
 
             var pipeName = snooze.getAttribute("data-pipe");
             if (pipeName.indexOf("/") != -1) {
-                snooze.pipe = function(callback) { this.GET(pipeName, callback); }.bind(this)
+                snooze.pipe = function(callback) { this.req("GET", pipeName, callback); }.bind(this)
             } else if (typeof(this.pipes[pipeName]) === "object") {
                 snooze.pipe = function(callback) { callback(this) }.bind(this.pipes[pipeName]);
             } else snooze.pipe = this.pipes[pipeName];
