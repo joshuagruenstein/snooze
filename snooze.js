@@ -85,25 +85,27 @@ var snooze = {
         }.bind(this));
     },
     bindToState: function(elements) {
+        function addProps(obj, arr, val) {
+            if (typeof arr == 'string') arr = arr.split(".");
+            obj[arr[0]] = obj[arr[0]] || {};
+            var tmpObj = obj[arr[0]];
+            if (arr.length > 1) {
+                arr.shift();
+                addProps(tmpObj, arr, val);
+            } else obj[arr[0]] = val;
+            return obj;
+        }
+
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
                 if (element.attributes[i].nodeName === "data-model") {
-                    var modelName = element.attributes[i].nodeValue;
-                    function addProps(obj, arr, val) {
-                        if (typeof arr == 'string') arr = arr.split(".");
-                        obj[arr[0]] = obj[arr[0]] || {};
-                        var tmpObj = obj[arr[0]];
-                        if (arr.length > 1) {
-                            arr.shift();
-                            addProps(tmpObj, arr, val);
-                        } else obj[arr[0]] = val;
-                        return obj;
-                    }
-
-                    addProps(this.models, modelName, element.value);
-                    element.addEventListener("input",function(e) {
+                    element.attributes[i].nodeValue.split(" ").forEach(function(modelName) {
                         addProps(this.models, modelName, element.value);
+                        element.addEventListener("input",function(e) {
+                            addProps(this.models, modelName, element.value);
+                        }.bind(this));
                     }.bind(this));
+
                 }
             }
         }.bind(this));
