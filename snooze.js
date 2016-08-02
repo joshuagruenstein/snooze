@@ -2,6 +2,11 @@ var snooze = {
     snoozes: null,
     pipes: {},
     guards: {},
+    withID: function(id) {
+        return this.snoozes.find(function(snooze) {
+            return snooze.id === id;
+        });
+    },
     gen: function() {
         var re = /<~([^%>]+)?~>/g;
         var reExp = /(^( )?(if|for|else|switch|case|break|{|}))(.*)?/g;
@@ -38,11 +43,11 @@ var snooze = {
     },
     init: function() {
         scripts = document.getElementsByTagName("script");
-        this.snoozes = Array.prototype.filter.call(scripts, function(tag) {
+        this.snooze.snoozes = Array.prototype.filter.call(scripts, function(tag) {
             return tag.type === "text/snooze"
         });
 
-        this.snoozes.forEach(function(snooze) {
+        this.snooze.snoozes.forEach(function(snooze) {
             snooze.gen = this.gen.bind(snooze);
             snooze.refresh = this.refresh.bind(snooze);
 
