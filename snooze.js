@@ -53,6 +53,7 @@ var snooze = {
             if (JSON.stringify(data) !== JSON.stringify(this.data)) {
                 this.data = this.guard(data);
                 this.gen();
+                window.snooze.setListeners(this.dom.getElementsByTagName("*"));
             }
         }.bind(this));
     },
@@ -67,12 +68,7 @@ var snooze = {
             }.bind(this.pipes[pipeName]);
         } else return this.pipes[pipeName];
     },
-    init: function() {
-        var elements = document.body.getElementsByTagName("*");
-        this.snooze.snoozes = Array.prototype.filter.call(elements, function(tag) {
-            return tag.type === "text/snooze";
-        });
-
+    setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
                 if (this.handler_map[element.attributes[i].nodeName] != undefined) {
@@ -81,7 +77,14 @@ var snooze = {
                     element.addEventListener(eventName,this.handlers[functionName]);
                 }
             }
-        }.bind(this.snooze));
+        }.bind(this));
+    },
+    init: function() {
+        var elements = document.body.getElementsByTagName("*");
+        this.snooze.setListeners(elements);
+        this.snooze.snoozes = Array.prototype.filter.call(elements, function(tag) {
+            return tag.type === "text/snooze";
+        });
 
         this.snooze.snoozes.forEach(function(snooze) {
             snooze.gen = this.gen.bind(snooze);
