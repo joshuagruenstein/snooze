@@ -100,7 +100,20 @@ var snooze = {
             for (var i=0; i<element.attributes.length; i++) {
                 if (element.attributes[i].nodeName === "data-model") {
                     element.attributes[i].nodeValue.split(" ").forEach(function(modelName) {
-                        if (element.type === "checkbox" || element.type === "radio") {
+                        if (element.className.split(" ").includes("radioGroup")) {
+                            element.childNodes.forEach(function(node) {
+                                node.name="snooze-temp";
+                            });
+
+                            var selected = element.querySelector('input:checked');
+                            var value = selected === null ? null : selected.value;
+                            addProps(this.models, modelName, value);
+                            element.addEventListener("change",function(e) {
+                                var selected = element.querySelector('input:checked');
+                                var value = selected === null ? null : selected.value;
+                                addProps(this.models, modelName, value);
+                            }.bind(this));
+                        } else if (element.type === "checkbox" || element.type === "radio") {
                             addProps(this.models, modelName, element.checked);
                             element.addEventListener("change",function(e) {
                                 addProps(this.models, modelName, element.checked);

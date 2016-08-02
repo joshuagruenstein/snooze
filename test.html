@@ -26,6 +26,11 @@
 <body>
     <input type="text" data-model="a b" />
     <input type="checkbox" data-model="checkBox" />
+    <div class="other radioGroup" data-model="radio">
+        <input type="radio" value="one" />
+        <input type="radio" value="two" />
+        <input type="radio" value="three" />
+    </div>
     <script type="text/snooze" id="nameSnooze" data-pipe="myPipe">
         <ul>
             <li>First: <~ this.data.first ~></li>
