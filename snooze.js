@@ -41,6 +41,17 @@ var snooze = {
             }
         }.bind(this));
     },
+    genPipe: function(pipeName) {
+        if (pipeName.indexOf("/") != -1) {
+            return function(callback) {
+                this.req("GET", pipeName, callback);
+            }.bind(this)
+        } else if (typeof(this.pipes[pipeName]) === "object") {
+            return function(callback) {
+                callback(this)
+            }.bind(this.pipes[pipeName]);
+        } else return this.pipes[pipeName];
+    },
     init: function() {
         scripts = document.getElementsByTagName("script");
         this.snooze.snoozes = Array.prototype.filter.call(scripts, function(tag) {
@@ -50,18 +61,17 @@ var snooze = {
         this.snooze.snoozes.forEach(function(snooze) {
             snooze.gen = this.gen.bind(snooze);
             snooze.refresh = this.refresh.bind(snooze);
+            snooze.setPipe = function(pipeName) {
+                snooze.pipe = this.genPipe(pipeName);
+            }.bind(this);
 
-            var pipeName = snooze.getAttribute("data-pipe");
-            if (pipeName.indexOf("/") != -1) {
-                snooze.pipe = function(callback) { this.req("GET", pipeName, callback); }.bind(this)
-            } else if (typeof(this.pipes[pipeName]) === "object") {
-                snooze.pipe = function(callback) { callback(this) }.bind(this.pipes[pipeName]);
-            } else snooze.pipe = this.pipes[pipeName];
+            snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
 
-            if (snooze.getAttribute("data-guard") == null) snooze.guard = function(data) {return data};
+            if (snooze.getAttribute("data-guard") == null)
+                snooze.guard = function(data) {return data};
             else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
 
             snooze.period = snooze.getAttribute("data-period");
