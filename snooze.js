@@ -89,9 +89,20 @@ var snooze = {
             for (var i=0; i<element.attributes.length; i++) {
                 if (element.attributes[i].nodeName === "data-model") {
                     var modelName = element.attributes[i].nodeValue;
-                    this.models[modelName] = element.value;
+                    function addProps(obj, arr, val) {
+                        if (typeof arr == 'string') arr = arr.split(".");
+                        obj[arr[0]] = obj[arr[0]] || {};
+                        var tmpObj = obj[arr[0]];
+                        if (arr.length > 1) {
+                            arr.shift();
+                            addProps(tmpObj, arr, val);
+                        } else obj[arr[0]] = val;
+                        return obj;
+                    }
+
+                    addProps(this.models, modelName, element.value);
                     element.addEventListener("input",function(e) {
-                        this.models[modelName] = element.value;
+                        addProps(this.models, modelName, element.value);
                     }.bind(this));
                 }
             }
