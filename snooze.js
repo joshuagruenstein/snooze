@@ -2,6 +2,10 @@ var snooze = {
     snoozes: [],
     pipes: {},
     guards: {},
+    handlers: {},
+    handler_map: {
+        "data-click":"click"
+    },
     withID: function(id) {
         return this.snoozes.find(function(snooze) {
             return snooze.id === id;
@@ -60,10 +64,20 @@ var snooze = {
         } else return this.pipes[pipeName];
     },
     init: function() {
-        var scripts = document.getElementsByTagName("script");
-        this.snooze.snoozes = Array.prototype.filter.call(scripts, function(tag) {
+        var elements = document.body.getElementsByTagName("*");
+        this.snooze.snoozes = Array.prototype.filter.call(elements, function(tag) {
             return tag.type === "text/snooze";
         });
+
+        Array.prototype.forEach.call(elements,function(element) {
+            for (var i=0; i<element.attributes.length; i++) {
+                if (this.handler_map[element.attributes[i].nodeName] != undefined) {
+                    var functionName = element.attributes[i].nodeValue;
+                    var eventName = this.handler_map[element.attributes[i].nodeName];
+                    element.addEventListener(eventName,this.handlers[functionName]);
+                }
+            }
+        }.bind(this.snooze));
 
         this.snooze.snoozes.forEach(function(snooze) {
             snooze.gen = this.gen.bind(snooze);
