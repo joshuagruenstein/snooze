@@ -52,7 +52,9 @@ var snooze = {
             var pipeName = snooze.getAttribute("data-pipe");
             if (pipeName.indexOf("/") != -1) {
                 snooze.pipe = this.httpPipe.bind(snooze.getAttribute("data-pipe"));
-            }
+            } else if (typeof(this.pipes[pipeName]) === "object") {
+                snooze.pipe = function(callback) { callback(this) }.bind(this.pipes[pipeName]);
+            } else snooze.pipe = this.pipes[pipeName];
 
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);

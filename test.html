@@ -7,11 +7,22 @@
         snooze.guards['myFunction'] = function(data) {
             return data;
         };
+
+        snooze.pipes['myPipe'] = function(callback) {
+            callback({first:"Joshua", last:"Gruenstein"});
+        }
     </script>
     <title>Snooze Testbed</title>
 </head>
 
 <body>
+    <script type="text/snooze" data-pipe="myPipe">
+        <ul>
+            <li>First: <~ this.data.first ~></li>
+            <li>Last: <~ this.data.last ~></li>
+        </ul>
+    </script>
+
     <script type="text/snooze" data-pipe="http://jsonplaceholder.typicode.com/posts" data-guard="myFunction">
         <~ for (var index in this.data) {~>
             <ul>
