@@ -3,6 +3,7 @@ var snooze = {
     pipes: {},
     guards: {},
     handlers: {},
+    models: {},
     handler_map: {
         "data-click":"click",
         "data-input":"input",
@@ -53,7 +54,10 @@ var snooze = {
             if (JSON.stringify(data) !== JSON.stringify(this.data)) {
                 this.data = this.guard(data);
                 this.gen();
-                window.snooze.setListeners(this.dom.getElementsByTagName("*"));
+
+                var elements = this.dom.getElementsByTagName("*");
+                window.snooze.bindToState(elements);
+                window.snooze.setListeners(elements);
             }
         }.bind(this));
     },
@@ -80,9 +84,23 @@ var snooze = {
             }
         }.bind(this));
     },
+    bindToState: function(elements) {
+        Array.prototype.forEach.call(elements,function(element) {
+            for (var i=0; i<element.attributes.length; i++) {
+                if (element.attributes[i].nodeName === "data-model") {
+                    var modelName = element.attributes[i].nodeValue;
+                    this.models[modelName] = element.value;
+                    element.addEventListener("input",function(e) {
+                        this.models[modelName] = element.value;
+                    }.bind(this));
+                }
+            }
+        }.bind(this));
+    },
     init: function() {
         var elements = document.body.getElementsByTagName("*");
         this.snooze.setListeners(elements);
+        this.snooze.bindToState(elements);
         this.snooze.snoozes = Array.prototype.filter.call(elements, function(tag) {
             return tag.type === "text/snooze";
         });
