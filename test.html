@@ -12,21 +12,24 @@
             callback({first:"Joshua", last:"Gruenstein"});
         };
 
-        snooze.handlers['doStuff'] = function(event) {
-            alert(event);
+        snooze.handlers['eventOne'] = function(event) {
+            console.log("event one");
+        };
+
+        snooze.handlers['eventTwo'] = function(event) {
+            console.log("event two");
         };
     </script>
     <title>Snooze Testbed</title>
 </head>
 
 <body>
-    <div><button data-mouseover="doStuff">Click me!</button></div>
-    <input type="text" data-input="doStuff" />
+    <div><button data-click="eventOne eventTwo">Click me!</button></div>
     <script type="text/snooze" id="nameSnooze" data-pipe="myPipe">
         <ul>
             <li>First: <~ this.data.first ~></li>
             <li>Last: <~ this.data.last ~></li>
-            <li><button data-click="doStuff">Click me!</button></li>
+            <li><button data-click="eventOne">Click me!</button></li>
         </ul>
     </script>
 

@@ -72,9 +72,10 @@ var snooze = {
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
                 if (this.handler_map[element.attributes[i].nodeName] != undefined) {
-                    var functionName = element.attributes[i].nodeValue;
                     var eventName = this.handler_map[element.attributes[i].nodeName];
-                    element.addEventListener(eventName,this.handlers[functionName]);
+                    element.attributes[i].nodeValue.split(" ").forEach(function(name) {
+                        element.addEventListener(eventName,this.handlers[name]);
+                    }.bind(this));
                 }
             }
         }.bind(this));
