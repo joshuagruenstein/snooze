@@ -4,7 +4,11 @@ var snooze = {
     guards: {},
     handlers: {},
     handler_map: {
-        "data-click":"click"
+        "data-click":"click",
+        "data-input":"input",
+        "data-change":"change",
+        "data-mouseover":"mouseover",
+        "data-keydown":"keydown"
     },
     withID: function(id) {
         return this.snoozes.find(function(snooze) {
