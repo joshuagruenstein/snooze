@@ -50,27 +50,37 @@ var snooze = {
         xhr.send(JSON.stringify(data));
     },
     refresh: function() {
-        this.pipe(function(data) {
-            if (JSON.stringify(data) !== JSON.stringify(this.data)) {
-                this.data = this.guard(data);
-                this.gen();
+        this.pipe.func(function(newData) {
+            if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
 
-                var elements = this.dom.getElementsByTagName("*");
-                window.snooze.bindToState(elements);
-                window.snooze.setListeners(elements);
-            }
+            this.data = this.guard(newData);
+            this.gen();
+
+            var elements = this.dom.getElementsByTagName("*");
+            window.snooze.bindToState(elements);
+            window.snooze.setListeners(elements);
         }.bind(this));
     },
     genPipe: function(pipeName) {
         if (pipeName.indexOf("/") != -1) {
-            return function(callback) {
-                this.req("GET", pipeName, callback);
-            }.bind(this);
+            return {
+                func: function(callback) {
+                    this.req("GET", pipeName, callback);
+                }.bind(this),
+                type: "http",
+                url: pipeName
+            };
         } else if (typeof(this.pipes[pipeName]) === "object") {
-            return function(callback) {
-                callback(this);
-            }.bind(this.pipes[pipeName]);
-        } else return this.pipes[pipeName];
+            return {
+                func: function(callback) {
+                    callback(this.pipes[pipeName]);
+                }.bind(this),
+                type: "object"
+            };
+        } else return {
+            func: this.pipes[pipeName],
+            type: "custom"
+        };
     },
     setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
@@ -132,8 +142,9 @@ var snooze = {
     },
     init: function() {
         var elements = document.body.getElementsByTagName("*");
-        this.snooze.setListeners(elements);
         this.snooze.bindToState(elements);
+        this.snooze.setListeners(elements);
+
         this.snooze.snoozes = Array.prototype.filter.call(elements, function(tag) {
             return tag.type === "text/snooze";
         });
@@ -154,11 +165,15 @@ var snooze = {
                 snooze.guard = function(data) { return data; };
             } else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
 
-            snooze.period = parseFloat(snooze.getAttribute("data-period"));
-            if (isNaN(snooze.period)) snooze.period = 30;
-            else if (snooze.period !== "none") {
-                setInterval(snooze.refresh, snooze.period*1000);
-            } snooze.refresh();
+            if (snooze.getAttribute("data-period") !== "none") {
+                snooze.period = parseFloat(snooze.getAttribute("data-period"));
+                if (isNaN(snooze.period)) {
+                    if (snooze.pipe.type === "http") snooze.period = 20;
+                    else if (snooze.pipe.type === "object") snooze.period = 0.2;
+                    else snooze.period = 1;
+                } setInterval(snooze.refresh, snooze.period*1000);
+            } else snooze.period = "none";
+            snooze.refresh();
         }.bind(this.snooze));
     }
 };
