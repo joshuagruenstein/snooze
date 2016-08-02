@@ -100,10 +100,17 @@ var snooze = {
             for (var i=0; i<element.attributes.length; i++) {
                 if (element.attributes[i].nodeName === "data-model") {
                     element.attributes[i].nodeValue.split(" ").forEach(function(modelName) {
-                        addProps(this.models, modelName, element.value);
-                        element.addEventListener("input",function(e) {
+                        if (element.type === "checkbox" || element.type === "radio") {
+                            addProps(this.models, modelName, element.checked);
+                            element.addEventListener("change",function(e) {
+                                addProps(this.models, modelName, element.checked);
+                            }.bind(this));
+                        } else {
                             addProps(this.models, modelName, element.value);
-                        }.bind(this));
+                            element.addEventListener("input",function(e) {
+                                addProps(this.models, modelName, element.value);
+                            }.bind(this));
+                        }
                     }.bind(this));
 
                 }
