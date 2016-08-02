@@ -154,8 +154,8 @@ var snooze = {
                 snooze.guard = function(data) { return data; };
             } else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
 
-            snooze.period = snooze.getAttribute("data-period");
-            if (snooze.period === null) snooze.period = 30;
+            snooze.period = parseFloat(snooze.getAttribute("data-period"));
+            if (isNaN(snooze.period)) snooze.period = 30;
             else if (snooze.period !== "none") {
                 setInterval(snooze.refresh, snooze.period*1000);
             } snooze.refresh();
