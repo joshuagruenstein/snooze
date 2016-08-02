@@ -3,7 +3,9 @@ var snooze = {
     pipes: {},
     guards: {},
     gen: function() {
-        var re = /<~([^%>]+)?~>/g, reExp = /(^( )?(if|for|else|switch|case|break|{|}))(.*)?/g, code = 'var r=[];\n', cursor = 0, match;
+        var re = /<~([^%>]+)?~>/g;
+        var reExp = /(^( )?(if|for|else|switch|case|break|{|}))(.*)?/g;
+        var code = 'var r=[];\n', cursor = 0, match;
         var add = function(line, js) {
             js? (code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n') :
                 (code += line != '' ? 'r.push("' + line.replace(/"/g, '\\"') + '");\n' : '');
@@ -18,18 +20,13 @@ var snooze = {
 
         this.dom.innerHTML = new Function(code.replace(/[\r\t\n]/g, '')).apply(this);
     },
-    httpPipe: function(callback) {
+    GET: function(url, callback) {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', this);
-        xhr.send(null);
-
         xhr.onreadystatechange = function() {
-            var DONE = 4;
-            var OK = 200;
-            if (xhr.readyState === DONE) {
-                if (xhr.status === OK) this(JSON.parse(xhr.responseText));
-            } else if (xhr.status !== OK) console.log('Error: ' + xhr.status);
-        }.bind(callback)
+            if (xhr.readyState == 4 && xhr.status == 200)
+                callback(JSON.parse(xhr.responseText));
+        }; xhr.open('GET', url);
+        xhr.send(null);
     },
     refresh: function() {
         this.pipe(function(data) {
@@ -51,7 +48,7 @@ var snooze = {
 
             var pipeName = snooze.getAttribute("data-pipe");
             if (pipeName.indexOf("/") != -1) {
-                snooze.pipe = this.httpPipe.bind(snooze.getAttribute("data-pipe"));
+                snooze.pipe = function(callback) { this.GET(pipeName, callback); }.bind(this)
             } else if (typeof(this.pipes[pipeName]) === "object") {
                 snooze.pipe = function(callback) { callback(this) }.bind(this.pipes[pipeName]);
             } else snooze.pipe = this.pipes[pipeName];
