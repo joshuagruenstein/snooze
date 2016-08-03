@@ -11,6 +11,149 @@ var snooze = {
         "data-mouseover":"mouseover",
         "data-keydown":"keydown"
     },
+    minimorph: {
+        morphAttrs: function (fromNode, toNode) {
+            var foundAttrs = {};
+
+            for (var i=toNode.attributes.length-1; i>=0; i--) {
+                var attr = toNode.attributes[i];
+                if (attr.specified !== false) {
+                    foundAttrs[attr.name] = true;
+                    if (fromNode.getAttribute(attr.name) !== attr.value) {
+                        fromNode.setAttribute(attr.name, attr.value);
+                    }
+                }
+            }
+
+            for (var i=fromNode.attributes.length-1; i>=0; i--) {
+                var attr = fromNode.attributes[i];
+                if (attr.specified !== false) {
+                    var attrName = attr.name;
+                    if (!foundAttrs.hasOwnProperty(attrName)) {
+                        fromNode.removeAttribute(attrName);
+                    }
+                }
+            }
+        },
+        morph: function(fromNode, toNode) {
+            var savedEls = {};
+            var unmatchedEls = {};
+
+            var newDOM = document.createElement("div");
+            newDOM.innerHTML = toNode;
+            toNode = newDOM;
+
+            function removeNodeHelper(node, nestedInSavedEl) {
+                if (node.id) savedEls[node.id] = node;
+                if (node.nodeType === 1) {
+                    var curChild = node.firstChild;
+                    while(curChild) {
+                        removeNodeHelper(curChild, nestedInSavedEl || node.id);
+                        curChild = curChild.nextSibling;
+                    }
+                }
+            }
+
+            function walkDiscardedChildNodes(node) {
+                if (node.nodeType === 1) {
+                    var curChild = node.firstChild;
+                    while(curChild) {
+                        if (!curChild.id) walkDiscardedChildNodes(curChild);
+                        curChild = curChild.nextSibling;
+                    }
+                }
+            }
+
+            function removeNode(node, parentNode, alreadyVisited) {
+                parentNode.removeChild(node);
+                if (alreadyVisited) {
+                    if (!node.id) walkDiscardedChildNodes(node);
+                } else removeNodeHelper(node);
+            }
+
+            function morphEl(fromEl, toEl, alreadyVisited) {
+                if (toEl.id) delete savedEls[toEl.id];
+
+                var curToNodeChild = toEl.firstChild;
+                var curFromNodeChild = fromEl.firstChild;
+                var curToNodeId;
+
+                var fromNextSibling;
+                var toNextSibling;
+                var savedEl;
+                var unmatchedEl;
+
+outer:          while(curToNodeChild) {
+                    toNextSibling = curToNodeChild.nextSibling;
+                    curToNodeId = curToNodeChild.id;
+
+                    while(curFromNodeChild) {
+                        fromNextSibling = curFromNodeChild.nextSibling;
+
+                        if (!alreadyVisited) {
+                            if (curFromNodeChild.id && (unmatchedEl = unmatchedEls[curFromNodeChild.id])) {
+                                unmatchedEl.parentNode.replaceChild(curFromNodeChild, unmatchedEl);
+                                morphEl(curFromNodeChild, unmatchedEl, alreadyVisited);
+                                curFromNodeChild = fromNextSibling;
+                                continue;
+                            }
+                        }
+
+                        if (curFromNodeChild.nodeType === curToNodeChild.nodeType) {
+                            var isCompatible = false;
+
+                            if (curFromNodeChild.nodeType === 1) { // Both nodes being compared are Element nodes
+                                if (curFromNodeChild.tagName === curToNodeChild.tagName) {
+                                    if (curFromNodeChild.id || curToNodeId) {
+                                        if (curToNodeId === curFromNodeChild.id) isCompatible = true;
+                                    } else isCompatible = true;
+                                } if (isCompatible) morphEl(curFromNodeChild, curToNodeChild, alreadyVisited);
+                            } else if (curFromNodeChild.nodeType === 3) { // Both nodes being compared are Text nodes
+                                isCompatible = true;
+                                curFromNodeChild.nodeValue = curToNodeChild.nodeValue;
+                            }
+
+                            if (isCompatible) {
+                                curToNodeChild = toNextSibling;
+                                curFromNodeChild = fromNextSibling;
+                                continue outer;
+                            }
+                        }
+
+                        // No compatible match so remove the old node from the DOM and continue trying
+                        // to find a match in the original DOM
+                        removeNode(curFromNodeChild, fromEl, alreadyVisited);
+                        curFromNodeChild = fromNextSibling;
+                    }
+
+                    if (curToNodeId) {
+                        if ((savedEl = savedEls[curToNodeId])) {
+                            morphEl(savedEl, curToNodeChild, true);
+                            curToNodeChild = savedEl; // We want to append the saved element instead
+                        } else unmatchedEls[curToNodeId] = curToNodeChild;
+                    } fromEl.appendChild(curToNodeChild); // end of search
+
+                    curToNodeChild = toNextSibling;
+                    curFromNodeChild = fromNextSibling;
+                }
+
+                while(curFromNodeChild) {
+                    fromNextSibling = curFromNodeChild.nextSibling;
+                    removeNode(curFromNodeChild, fromEl, alreadyVisited);
+                    curFromNodeChild = fromNextSibling;
+                }
+
+                if (fromEl.tagName === "INPUT") {
+                    if (toEl.hasAttribute('checked') && !fromEl.hasAttribute('checked'))
+                        fromEl.checked = 1;
+                    if (toEl.hasAttribute('value') && !fromEl.hasAttribute('value'))
+                        fromEl.value = toEl.getAttribute("value");
+                }
+            } if (fromNode !== toNode) morphEl(fromNode, toNode, false);
+
+            return fromNode;
+        }
+    },
     withID: function(id) {
         return this.snoozes.find(function(snooze) {
             return snooze.id === id;
@@ -41,7 +184,7 @@ var snooze = {
             code.replace(/[\r\t\n]/g, '')
         ).apply(this);
 
-        minimorph.morph(this.dom,newHTML);
+        snooze.minimorph.morph(this.dom,newHTML);
     },
     req: function(type, url, callback, data) {
         var xhr = new XMLHttpRequest();
