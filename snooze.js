@@ -53,10 +53,9 @@ var snooze = {
         this.pipe.func(function(newData) {
             if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
 
-            var tempData = newData;
             this.guards.forEach(function(func) {
-                tempData = func(tempData);
-            }); this.data = tempData;
+                newData = func(newData);
+            }); this.data = newData;
 
             this.gen();
 
