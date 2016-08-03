@@ -53,7 +53,11 @@ var snooze = {
         this.pipe.func(function(newData) {
             if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
 
-            this.data = this.guard(newData);
+            var tempData = newData;
+            this.guards.forEach(function(func) {
+                tempData = func(tempData);
+            }); this.data = tempData;
+
             this.gen();
 
             var elements = this.dom.getElementsByTagName("*");
@@ -162,7 +166,12 @@ var snooze = {
 
             if (snooze.getAttribute("data-guard") === null) {
                 snooze.guard = function(data) { return data; };
-            } else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
+            } else {
+                snooze.guards = [];
+                snooze.getAttribute("data-guard").split(" ").forEach(function(guard) {
+                    snooze.guards.push(this.guards[guard]);
+                }.bind(this));
+            }
 
             snooze.setPipe(snooze.getAttribute("data-pipe"));
 
