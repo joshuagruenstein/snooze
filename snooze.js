@@ -37,9 +37,15 @@ var snooze = {
         add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
         code += 'return r.join("");';
 
-        this.dom.innerHTML = new Function(
+        var newHTML = new Function(
             code.replace(/[\r\t\n]/g, '')
         ).apply(this);
+
+        snooze.updateDOM(this.dom,newHTML);
+    },
+    updateDOM: function(DOM, newHTML) {
+        // do beautiful virtual DOM diffing stuff here
+        DOM.innerHTML = newHTML;
     },
     req: function(type, url, callback, data) {
         var xhr = new XMLHttpRequest();
@@ -60,28 +66,26 @@ var snooze = {
             this.gen();
 
             var elements = this.dom.getElementsByTagName("*");
-            window.snooze.bindToState(elements);
-            window.snooze.setListeners(elements);
+            snooze.bindToState(elements);
+            snooze.setListeners(elements);
         }.bind(this));
     },
     genPipe: function(pipeName) {
         if (pipeName.indexOf("/") != -1) {
             return {
                 func: function(callback) {
-                    this.req("GET", pipeName, callback);
-                }.bind(this),
-                type: "http",
+                    snooze.req("GET", pipeName, callback);
+                }, type: "url",
                 url: pipeName
             };
         } else if (typeof(this.pipes[pipeName]) === "object") {
             return {
                 func: function(callback) {
-                    callback(this.pipes[pipeName]);
-                }.bind(this),
-                type: "object"
+                    callback(snooze.pipes[pipeName]);
+                }, type: "object"
             };
         } else return {
-            func: this.pipes[pipeName],
+            func: snooze.pipes[pipeName],
             type: "custom"
         };
     },
