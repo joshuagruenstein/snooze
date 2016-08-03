@@ -41,11 +41,7 @@ var snooze = {
             code.replace(/[\r\t\n]/g, '')
         ).apply(this);
 
-        snooze.updateDOM(this.dom,newHTML);
-    },
-    updateDOM: function(DOM, newHTML) {
-        // do beautiful virtual DOM diffing stuff here
-        DOM.innerHTML = newHTML;
+        minimorph.morph(this.dom,newHTML);
     },
     req: function(type, url, callback, data) {
         var xhr = new XMLHttpRequest();
