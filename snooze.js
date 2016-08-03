@@ -317,14 +317,15 @@ outer:          while(curToNodeChild) {
 
             snooze.setPipe(snooze.getAttribute("data-pipe"));
 
-            if (snooze.getAttribute("data-period") !== "none") {
-                snooze.period = parseFloat(snooze.getAttribute("data-period"));
-                if (isNaN(snooze.period)) {
-                    if (snooze.pipe.type === "http") snooze.period = 20;
-                    else if (snooze.pipe.type === "object") snooze.period = 0.2;
-                    else snooze.period = 1;
-                } setInterval(snooze.refresh, snooze.period*1000);
-            } else snooze.period = "none";
+            if (snooze.hasAttribute("data-period")) {
+                var periodString = snooze.getAttribute("data-period");
+                if (!isNaN(periodString) && /[^\s]/.test(periodString))  {
+                    snooze.period = parseFloat(periodString);
+                    setInterval(snooze.refresh, snooze.period*1000);
+                } else snooze.period = null;
+            } else if (snooze.pipe.type === "object") {
+                setInterval(snooze.refresh, 300);
+            } else snooze.period = null;
         }.bind(this.snooze));
     }
 };
