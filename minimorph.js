@@ -1,10 +1,4 @@
 var minimorph = {
-    inputElHandler: function(fromEl, toEl) {
-        if (toEl.hasAttribute('checked') && !fromEl.hasAttribute('checked'))
-            fromEl.checked = 1;
-        if (toEl.hasAttribute('value') && !fromEl.hasAttribute('value'))
-            fromEl.value = toEl.getAttribute("value");
-    },
     morphAttrs: function (fromNode, toNode) {
         var foundAttrs = {};
 
@@ -42,7 +36,7 @@ var minimorph = {
             if (node.nodeType === 1) {
                 var curChild = node.firstChild;
                 while(curChild) {
-                    removeNodeHelper(curChild, nestedInSavedEl || id);
+                    removeNodeHelper(curChild, nestedInSavedEl || node.id);
                     curChild = curChild.nextSibling;
                 }
             }
@@ -82,11 +76,10 @@ outer:      while(curToNodeChild) {
                 curToNodeId = curToNodeChild.id;
 
                 while(curFromNodeChild) {
-                    var curFromNodeId = curFromNodeChild.id;
                     fromNextSibling = curFromNodeChild.nextSibling;
 
                     if (!alreadyVisited) {
-                        if (curFromNodeId && (unmatchedEl = unmatchedEls[curFromNodeId])) {
+                        if (curFromNodeChild.id && (unmatchedEl = unmatchedEls[curFromNodeChild.id])) {
                             unmatchedEl.parentNode.replaceChild(curFromNodeChild, unmatchedEl);
                             morphEl(curFromNodeChild, unmatchedEl, alreadyVisited);
                             curFromNodeChild = fromNextSibling;
@@ -94,18 +87,16 @@ outer:      while(curToNodeChild) {
                         }
                     }
 
-                    var curFromNodeType = curFromNodeChild.nodeType;
-
-                    if (curFromNodeType === curToNodeChild.nodeType) {
+                    if (curFromNodeChild.nodeType === curToNodeChild.nodeType) {
                         var isCompatible = false;
 
-                        if (curFromNodeType === 1) { // Both nodes being compared are Element nodes
+                        if (curFromNodeChild.nodeType === 1) { // Both nodes being compared are Element nodes
                             if (curFromNodeChild.tagName === curToNodeChild.tagName) {
-                                if (curFromNodeId || curToNodeId) {
-                                    if (curToNodeId === curFromNodeId) isCompatible = true;
+                                if (curFromNodeChild.id || curToNodeId) {
+                                    if (curToNodeId === curFromNodeChild.id) isCompatible = true;
                                 } else isCompatible = true;
                             } if (isCompatible) morphEl(curFromNodeChild, curToNodeChild, alreadyVisited);
-                        } else if (curFromNodeType === 3) { // Both nodes being compared are Text nodes
+                        } else if (curFromNodeChild.nodeType === 3) { // Both nodes being compared are Text nodes
                             isCompatible = true;
                             curFromNodeChild.nodeValue = curToNodeChild.nodeValue;
                         }
@@ -140,15 +131,14 @@ outer:      while(curToNodeChild) {
                 curFromNodeChild = fromNextSibling;
             }
 
-            if (fromEl.tagName === "INPUT") minimorph.inputElHandler(fromEl, toEl);
-        }
+            if (fromEl.tagName === "INPUT") {
+                if (toEl.hasAttribute('checked') && !fromEl.hasAttribute('checked'))
+                    fromEl.checked = 1;
+                if (toEl.hasAttribute('value') && !fromEl.hasAttribute('value'))
+                    fromEl.value = toEl.getAttribute("value");
+            }
+        } if (fromNode !== toNode) morphEl(fromNode, toNode, false);
 
-        var morphedNode = fromNode;
-        var morphedNodeType = morphedNode.nodeType;
-        var toNodeType = toNode.nodeType;
-
-        if (morphedNode !== toNode) morphEl(morphedNode, toNode, false);
-
-        return morphedNode;
+        return fromNode;
     }
 };
