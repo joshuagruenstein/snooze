@@ -154,9 +154,8 @@ var snooze = {
             snooze.refresh = this.refresh.bind(snooze);
             snooze.setPipe = function(pipeName) {
                 snooze.pipe = this.genPipe(pipeName);
+                snooze.refresh();
             }.bind(this);
-
-            snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
@@ -164,6 +163,8 @@ var snooze = {
             if (snooze.getAttribute("data-guard") === null) {
                 snooze.guard = function(data) { return data; };
             } else snooze.guard = this.guards[snooze.getAttribute("data-guard")];
+
+            snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             if (snooze.getAttribute("data-period") !== "none") {
                 snooze.period = parseFloat(snooze.getAttribute("data-period"));
@@ -173,7 +174,6 @@ var snooze = {
                     else snooze.period = 1;
                 } setInterval(snooze.refresh, snooze.period*1000);
             } else snooze.period = "none";
-            snooze.refresh();
         }.bind(this.snooze));
     }
 };
