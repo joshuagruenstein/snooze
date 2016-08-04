@@ -188,7 +188,7 @@ outer:      while(curToNodeChild) {
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4) {
                 if (xhr.status == 200) callback(JSON.parse(xhr.responseText));
-                else if (typeof errorCallback != 'undefined') errorCallback(xhr);
+                else if (errorCallback !== null) errorCallback(xhr);
             }
         }; xhr.open(type, url, true);
         xhr.send(JSON.stringify(data));
@@ -313,7 +313,17 @@ outer:      while(curToNodeChild) {
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
             snooze.setPipe(snooze.getAttribute("data-pipe"));
 
-            snooze.pipe.errorHandler = this.handlers[snooze.getAttribute("data-pipe-error")];
+            if (snooze.hasAttribute("data-pipe-error")) {
+                var funcs = snooze.getAttribute("data-pipe-error").split(" ").map(function(attr) {
+                    return this.handlers[attr];
+                }.bind(this));
+
+                snooze.pipe.errorHandler = function(error) {
+                    funcs.forEach(function(func) {
+                        func(error);
+                    });
+                }
+            } else snooze.pipe.errorHandler = null;
 
             if (snooze.hasAttribute("data-period")) {
                 var periodString = snooze.getAttribute("data-period");
