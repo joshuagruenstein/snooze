@@ -281,14 +281,12 @@ outer:      while(curToNodeChild) {
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
 
+            snooze.guards = [];
             if (snooze.getAttribute("data-guard") === null) {
-                snooze.guard = function(data) { return data; };
-            } else {
-                snooze.guards = [];
-                snooze.getAttribute("data-guard").split(" ").forEach(function(guard) {
-                    snooze.guards.push(this.guards[guard]);
-                }.bind(this));
-            }
+                snooze.guards.push(function(data) { return data; });
+            } else snooze.getAttribute("data-guard").split(" ").forEach(function(guard) {
+                snooze.guards.push(this.guards[guard]);
+            }.bind(this));
 
             if (snooze.hasAttribute("data-pipe-initial"))
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
