@@ -290,6 +290,8 @@ outer:      while(curToNodeChild) {
                 }.bind(this));
             }
 
+            if (snooze.hasAttribute("data-pipe-initial"))
+                snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
             snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             if (snooze.hasAttribute("data-period")) {
