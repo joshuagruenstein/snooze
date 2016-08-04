@@ -1,4 +1,5 @@
 var snooze = {
+    // SNOOZE GLOBAL FIELDS
     snoozes: [],
     pipes: {},
     guards: {},
@@ -10,6 +11,18 @@ var snooze = {
         "data-change":"change",
         "data-mouseover":"mouseover",
         "data-keydown":"keydown"
+    },
+
+    // SNOOZE GLOBAL METHODS
+    req: function(type, url, callback, errorCallback, data) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) callback(JSON.parse(xhr.responseText));
+                else if (errorCallback !== null) errorCallback(xhr);
+            }
+        }; xhr.open(type, url, true);
+        xhr.send(JSON.stringify(data));
     },
     minimorph: function(fromNode, toNode) {
         var savedEls = {};
@@ -151,78 +164,6 @@ outer:      while(curToNodeChild) {
 
         return fromNode;
     },
-    withID: function(id) {
-        return this.snoozes.find(function(snooze) {
-            return snooze.id === id;
-        });
-    },
-    gen: function() {
-        var re = new RegExp("<~([^%>]+)?~>","g");
-        var reExp = new RegExp("(^( )?(if|for|else|switch|case|break|{|}))(.*)?","g");
-        var code = "var r=[];\n";
-        var cursor = 0;
-
-        function add(line, js) {
-            if (js) code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n';
-            else if (line !== '') code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n';
-            return add;
-        }
-
-        var match;
-        while(match = re.exec(this.innerHTML)) {
-            add(this.innerHTML.slice(cursor, match.index))(match[1], true);
-            cursor = match.index + match[0].length;
-        }
-
-        add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
-        code += 'return r.join("");';
-
-        var newHTML = new Function(
-            code.replace(/[\r\t\n]/g, '')
-        ).apply(this);
-
-        snooze.minimorph(this.dom,newHTML);
-    },
-    req: function(type, url, callback, errorCallback, data) {
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) callback(JSON.parse(xhr.responseText));
-                else if (errorCallback !== null) errorCallback(xhr);
-            }
-        }; xhr.open(type, url, true);
-        xhr.send(JSON.stringify(data));
-    },
-    refresh: function() {
-        this.pipe.func(function(newData) {
-            if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
-
-            this.guards.forEach(function(func) {
-                newData = func(newData);
-            }); this.data = newData;
-
-            this.gen();
-
-            var elements = this.dom.getElementsByTagName("*");
-            snooze.bindToState(elements);
-            snooze.setListeners(elements);
-        }.bind(this));
-    },
-    setPipe: function(pipeName) {
-        if (pipeName.indexOf("/") != -1) {
-            this.pipe.url = pipeName;
-            this.pipe.func = function(callback) {
-                snooze.req("GET", this.url, callback, this.errorHandler);
-            }; this.pipe.type = "url";
-        } else if (typeof(snooze.pipes[pipeName]) === "object") {
-            this.pipe.func = function(callback) {
-                callback(snooze.pipes[pipeName]);
-            }; this.pipe.type = "object";
-        } else {
-            this.pipe.func = snooze.pipes[pipeName];
-            this.pipe.type = "custom";
-        }; this.refresh();
-    },
     setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
@@ -281,6 +222,73 @@ outer:      while(curToNodeChild) {
             }
         }.bind(this));
     },
+
+    // LOCAL TEMPLATE METHODS
+    withID: function(id) {
+        return this.snoozes.find(function(snooze) {
+            return snooze.id === id;
+        });
+    },
+    gen: function() {
+        var re = new RegExp("<~([^%>]+)?~>","g");
+        var reExp = new RegExp("(^( )?(if|for|else|switch|case|break|{|}))(.*)?","g");
+        var code = "var r=[];\n";
+        var cursor = 0;
+
+        function add(line, js) {
+            if (js) code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n';
+            else if (line !== '') code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n';
+            return add;
+        }
+
+        var match;
+        while(match = re.exec(this.innerHTML)) {
+            add(this.innerHTML.slice(cursor, match.index))(match[1], true);
+            cursor = match.index + match[0].length;
+        }
+
+        add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
+        code += 'return r.join("");';
+
+
+        var newHTML = new Function(
+            code.replace(/[\r\t\n]/g, '')
+        ).apply(this);
+
+        snooze.minimorph(this.dom, newHTML);
+    },
+    refresh: function() {
+        this.pipe.func(function(newData) {
+            if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
+
+            this.guards.forEach(function(func) {
+                newData = func(newData);
+            }); this.data = newData;
+
+            this.gen();
+
+            var elements = this.dom.getElementsByTagName("*");
+            snooze.bindToState(elements);
+            snooze.setListeners(elements);
+        }.bind(this));
+    },
+    setPipe: function(pipeName) {
+        if (pipeName.indexOf("/") != -1) {
+            this.pipe.url = pipeName;
+            this.pipe.func = function(callback) {
+                snooze.req("GET", this.url, callback, this.errorHandler);
+            }.bind(this.pipe); this.pipe.type = "url";
+        } else if (typeof(snooze.pipes[pipeName]) === "object") {
+            this.pipe.func = function(callback) {
+                callback(snooze.pipes[pipeName]);
+            }; this.pipe.type = "object";
+        } else {
+            this.pipe.func = snooze.pipes[pipeName];
+            this.pipe.type = "custom";
+        }; this.refresh();
+    },
+
+    // SNOOZE INITIALIZATION ROUTINE
     init: function() {
         var elements = document.body.getElementsByTagName("*");
         this.snooze.bindToState(elements);
@@ -306,9 +314,6 @@ outer:      while(curToNodeChild) {
             }
 
             snooze.pipe = {};
-            if (snooze.hasAttribute("data-pipe-initial"))
-                snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
-            snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             if (snooze.hasAttribute("data-pipe-error")) {
                 var funcs = snooze.getAttribute("data-pipe-error").split(" ").map(function(attr) {
@@ -321,6 +326,10 @@ outer:      while(curToNodeChild) {
                     });
                 }
             } else snooze.pipe.errorHandler = null;
+
+            if (snooze.hasAttribute("data-pipe-initial"))
+                snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
+            snooze.setPipe(snooze.getAttribute("data-pipe"));
 
             if (snooze.hasAttribute("data-period")) {
                 var periodString = snooze.getAttribute("data-period");
