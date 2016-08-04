@@ -208,20 +208,20 @@ outer:      while(curToNodeChild) {
             snooze.setListeners(elements);
         }.bind(this));
     },
-    setPipe: function(pipe, pipeName) {
+    setPipe: function(pipeName) {
         if (pipeName.indexOf("/") != -1) {
-            pipe.url = pipeName;
-            pipe.func = function(callback) {
+            this.pipe.url = pipeName;
+            this.pipe.func = function(callback) {
                 snooze.req("GET", this.url, callback, this.errorHandler);
-            }; pipe.type = "url";
-        } else if (typeof(this.pipes[pipeName]) === "object") {
-            pipe.func = function(callback) {
+            }; this.pipe.type = "url";
+        } else if (typeof(snooze.pipes[pipeName]) === "object") {
+            this.pipe.func = function(callback) {
                 callback(snooze.pipes[pipeName]);
-            }; pipe.type = "object";
+            }; this.pipe.type = "object";
         } else {
-            pipe.func = snooze.pipes[pipeName];
-            pipe.type = "custom";
-        };
+            this.pipe.func = snooze.pipes[pipeName];
+            this.pipe.type = "custom";
+        }; this.refresh();
     },
     setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
@@ -293,10 +293,7 @@ outer:      while(curToNodeChild) {
         this.snooze.snoozes.forEach(function(snooze) {
             snooze.gen = this.gen.bind(snooze);
             snooze.refresh = this.refresh.bind(snooze);
-            snooze.setPipe = function(pipeName) {
-                this.setPipe(snooze.pipe,pipeName);
-                snooze.refresh();
-            }.bind(this);
+            snooze.setPipe = this.setPipe.bind(snooze);
 
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
