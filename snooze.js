@@ -259,7 +259,6 @@ outer:      while(curToNodeChild) {
     },
     refresh: function() {
         this.pipe.func(function(newData) {
-            if (this.pipe.type !== "object" && JSON.stringify(newData) === JSON.stringify(this.data)) return;
 
             this.guards.forEach(function(func) {
                 newData = func(newData);
@@ -304,6 +303,19 @@ outer:      while(curToNodeChild) {
             this.pipe.type = "custom";
         }; this.refresh();
     },
+    stopPoll: function() {
+        clearInterval(this.intervalID);
+        this.intervalID = null;
+    },
+    setPoll: function(period) {
+        if (typeof(this.intervalID) !== "undefined" && this.intervalID !== null) this.stopPoll();
+
+        if (period === "default") {
+            if (this.pipe.type === "object") this.intervalID = setInterval(this.refresh, 300);
+        } else if (!isNaN(period) && /[^\s]/.test(period))  {
+            this.intervalID = setInterval(this.refresh, parseFloat(period)*1000);
+        } else this.stopPoll();
+    },
 
     // SNOOZE INITIALIZATION ROUTINE
     init: function() {
@@ -316,9 +328,11 @@ outer:      while(curToNodeChild) {
         });
 
         this.snooze.snoozes.forEach(function(snooze) {
-            snooze.gen     = this.gen.bind(snooze);
-            snooze.refresh = this.refresh.bind(snooze);
-            snooze.setPipe = this.setPipe.bind(snooze);
+            snooze.gen      = this.gen.bind(snooze);
+            snooze.refresh  = this.refresh.bind(snooze);
+            snooze.setPipe  = this.setPipe.bind(snooze);
+            snooze.setPoll  = this.setPoll.bind(snooze);
+            snooze.stopPoll = this.stopPoll.bind(snooze);
 
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
@@ -336,15 +350,8 @@ outer:      while(curToNodeChild) {
             snooze.setPipe(snooze.getAttribute("data-pipe"),
                            snooze.getAttribute("data-pipe-error"));
 
-            if (snooze.hasAttribute("data-period")) {
-                var periodString = snooze.getAttribute("data-period");
-                if (!isNaN(periodString) && /[^\s]/.test(periodString))  {
-                    snooze.period = parseFloat(periodString);
-                    setInterval(snooze.refresh, snooze.period*1000);
-                } else snooze.period = null;
-            } else if (snooze.pipe.type === "object") {
-                setInterval(snooze.refresh, 300);
-            } else snooze.period = null;
+            snooze.setPoll(snooze.getAttribute("data-period") || "default");
+
         }.bind(this.snooze));
     }
 };
