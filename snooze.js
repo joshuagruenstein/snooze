@@ -272,7 +272,24 @@ outer:      while(curToNodeChild) {
             snooze.setListeners(elements);
         }.bind(this));
     },
-    setPipe: function(pipeName) {
+    setPipe: function(pipeName, errorHandlerName) {
+        if (typeof(this.pipe) === "undefined") this.pipe = {};
+
+        if (typeof(errorHandlerName) === "undefined") {
+            if (typeof(this.pipe.errorHandler) === "undefined")
+                this.pipe.errorHandler = null;
+        } else {
+            var funcs = errorHandlerName.split(" ").map(function(attr) {
+                return snooze.handlers[attr];
+            });
+
+            this.pipe.errorHandler = function(error) {
+                funcs.forEach(function(func) {
+                    func(error);
+                });
+            }
+        }
+
         if (pipeName.indexOf("/") != -1) {
             this.pipe.url = pipeName;
             this.pipe.func = function(callback) {
@@ -299,7 +316,7 @@ outer:      while(curToNodeChild) {
         });
 
         this.snooze.snoozes.forEach(function(snooze) {
-            snooze.gen = this.gen.bind(snooze);
+            snooze.gen     = this.gen.bind(snooze);
             snooze.refresh = this.refresh.bind(snooze);
             snooze.setPipe = this.setPipe.bind(snooze);
 
@@ -313,23 +330,11 @@ outer:      while(curToNodeChild) {
                 }.bind(this));
             }
 
-            snooze.pipe = {};
-
-            if (snooze.hasAttribute("data-pipe-error")) {
-                var funcs = snooze.getAttribute("data-pipe-error").split(" ").map(function(attr) {
-                    return this.handlers[attr];
-                }.bind(this));
-
-                snooze.pipe.errorHandler = function(error) {
-                    funcs.forEach(function(func) {
-                        func(error);
-                    });
-                }
-            } else snooze.pipe.errorHandler = null;
-
             if (snooze.hasAttribute("data-pipe-initial"))
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
-            snooze.setPipe(snooze.getAttribute("data-pipe"));
+
+            snooze.setPipe(snooze.getAttribute("data-pipe"),
+                           snooze.getAttribute("data-pipe-error"));
 
             if (snooze.hasAttribute("data-period")) {
                 var periodString = snooze.getAttribute("data-period");
