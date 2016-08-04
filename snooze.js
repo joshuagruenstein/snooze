@@ -183,11 +183,13 @@ outer:      while(curToNodeChild) {
 
         snooze.minimorph(this.dom,newHTML);
     },
-    req: function(type, url, callback, data) {
+    req: function(type, url, callback, errorCallback, data) {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4 && xhr.status == 200)
-                callback(JSON.parse(xhr.responseText));
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) callback(JSON.parse(xhr.responseText));
+                else if (typeof errorCallback != 'undefined') errorCallback(xhr);
+            }
         }; xhr.open(type, url, true);
         xhr.send(JSON.stringify(data));
     },
@@ -206,23 +208,19 @@ outer:      while(curToNodeChild) {
             snooze.setListeners(elements);
         }.bind(this));
     },
-    genPipe: function(pipeName) {
+    setPipe: function(pipe, pipeName) {
         if (pipeName.indexOf("/") != -1) {
-            return {
-                func: function(callback) {
-                    snooze.req("GET", pipeName, callback);
-                }, type: "url",
-                url: pipeName
-            };
+            pipe.url = pipeName;
+            pipe.func = function(callback) {
+                snooze.req("GET", this.url, callback, this.errorHandler);
+            }; pipe.type = "url";
         } else if (typeof(this.pipes[pipeName]) === "object") {
-            return {
-                func: function(callback) {
-                    callback(snooze.pipes[pipeName]);
-                }, type: "object"
-            };
-        } else return {
-            func: snooze.pipes[pipeName],
-            type: "custom"
+            pipe.func = function(callback) {
+                callback(snooze.pipes[pipeName]);
+            }; pipe.type = "object";
+        } else {
+            pipe.func = snooze.pipes[pipeName];
+            pipe.type = "custom";
         };
     },
     setListeners: function(elements) {
@@ -296,7 +294,7 @@ outer:      while(curToNodeChild) {
             snooze.gen = this.gen.bind(snooze);
             snooze.refresh = this.refresh.bind(snooze);
             snooze.setPipe = function(pipeName) {
-                snooze.pipe = this.genPipe(pipeName);
+                this.setPipe(snooze.pipe,pipeName);
                 snooze.refresh();
             }.bind(this);
 
@@ -310,9 +308,12 @@ outer:      while(curToNodeChild) {
                 }.bind(this));
             }
 
+            snooze.pipe = {};
             if (snooze.hasAttribute("data-pipe-initial"))
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
             snooze.setPipe(snooze.getAttribute("data-pipe"));
+
+            snooze.pipe.errorHandler = this.handlers[snooze.getAttribute("data-pipe-error")];
 
             if (snooze.hasAttribute("data-period")) {
                 var periodString = snooze.getAttribute("data-period");
