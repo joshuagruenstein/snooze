@@ -50,6 +50,28 @@ var snooze = {
         function morphEl(fromEl, toEl, alreadyVisited) {
             if (toEl.id) delete savedEls[toEl.id];
 
+            var foundAttrs = {};
+
+            for (var i=toEl.attributes.length-1; i>=0; i--) {
+                var attr = toEl.attributes[i];
+                if (attr.specified !== false) {
+                    foundAttrs[attr.name] = true;
+                    if (fromEl.getAttribute(attr.name) !== attr.value) {
+                        fromEl.setAttribute(attr.name, attr.value);
+                    }
+                }
+            }
+
+            for (var i=fromEl.attributes.length-1; i>=0; i--) {
+                var attr = fromEl.attributes[i];
+                if (attr.specified !== false) {
+                    var attrName = attr.name;
+                    if (!foundAttrs.hasOwnProperty(attrName)) {
+                        fromEl.removeAttribute(attrName);
+                    }
+                }
+            }
+
             var curToNodeChild = toEl.firstChild;
             var curFromNodeChild = fromEl.firstChild;
             var curToNodeId;
