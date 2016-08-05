@@ -284,7 +284,9 @@ outer:      while(curToNodeChild) {
                 this.pipe.errorHandler = null;
         } else {
             var funcs = errorHandlerName.split(" ").map(function(attr) {
-                return snooze.handlers[attr];
+                if (typeof(snooze.handlers[attr]) === "undefined") {
+                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.";
+                } else return snooze.handlers[attr];
             });
 
             this.pipe.errorHandler = function(error) {
@@ -304,8 +306,12 @@ outer:      while(curToNodeChild) {
                 callback(snooze.pipes[pipeName]);
             }; this.pipe.type = "object";
         } else {
-            this.pipe.func = snooze.pipes[pipeName];
-            this.pipe.type = "custom";
+            if (typeof(snooze.pipes[pipeName]) === "undefined") {
+                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.";
+            } else {
+                this.pipe.func = snooze.pipes[pipeName];
+                this.pipe.type = "custom";
+            }
         }; this.refresh();
     },
     stopPoll: function() {
