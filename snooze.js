@@ -167,10 +167,12 @@ outer:      while(curToNodeChild) {
     setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
-                if (this.handler_map[element.attributes[i].nodeName] != undefined) {
+                if (typeof(this.handler_map[element.attributes[i].nodeName]) !== "undefined") {
                     var eventName = this.handler_map[element.attributes[i].nodeName];
                     element.attributes[i].nodeValue.split(" ").forEach(function(name) {
-                        element.addEventListener(eventName,this.handlers[name]);
+                        if (typeof(this.handlers[name]) === "undefined") {
+                            throw "snooze error: Handler \"" + name + "\" does not exist.\n  -> for event \"" + element.attributes[i].nodeName + "\"";
+                        } else element.addEventListener(eventName,this.handlers[name]);
                     }.bind(this));
                 }
             }
@@ -285,9 +287,9 @@ outer:      while(curToNodeChild) {
         } else {
             var funcs = errorHandlerName.split(" ").map(function(attr) {
                 if (typeof(snooze.handlers[attr]) === "undefined") {
-                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
+                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.\n  -> in template \"" + this.id + "\"";
                 } else return snooze.handlers[attr];
-            });
+            }.bind(this));
 
             this.pipe.errorHandler = function(error) {
                 funcs.forEach(function(func) {
@@ -307,7 +309,7 @@ outer:      while(curToNodeChild) {
             }; this.pipe.type = "object";
         } else {
             if (typeof(snooze.pipes[pipeName]) === "undefined") {
-                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
+                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.\n  -> in template \"" + this.id + "\"";
             } else {
                 this.pipe.func = snooze.pipes[pipeName];
                 this.pipe.type = "custom";
