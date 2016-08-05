@@ -167,10 +167,12 @@ outer:      while(curToNodeChild) {
     setListeners: function(elements) {
         Array.prototype.forEach.call(elements,function(element) {
             for (var i=0; i<element.attributes.length; i++) {
-                if (this.handler_map[element.attributes[i].nodeName] != undefined) {
+                if (typeof(this.handler_map[element.attributes[i].nodeName]) !== "undefined") {
                     var eventName = this.handler_map[element.attributes[i].nodeName];
                     element.attributes[i].nodeValue.split(" ").forEach(function(name) {
-                        element.addEventListener(eventName,this.handlers[name]);
+                        if (typeof(this.handlers[name]) === "undefined") {
+                            throw "snooze error: Handler \"" + name + "\" does not exist.\n  -> for event \"" + element.attributes[i].nodeName + "\"";
+                        } else element.addEventListener(eventName,this.handlers[name]);
                     }.bind(this));
                 }
             }
@@ -250,10 +252,15 @@ outer:      while(curToNodeChild) {
         add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
         code += 'return r.join("");';
 
-
-        var newHTML = new Function(
-            code.replace(/[\r\t\n]/g, '')
-        ).apply(this);
+        try {
+            var newHTML = new Function(
+                code.replace(/[\r\t\n]/g, '')
+            ).apply(this);
+        } catch (error) {
+            error.message = error.message + "\n  -> in template \"" + this.id + "\"";
+            throw error;
+            return;
+        }
 
         snooze.minimorph(this.dom, newHTML);
     },
@@ -274,13 +281,15 @@ outer:      while(curToNodeChild) {
     setPipe: function(pipeName, errorHandlerName) {
         if (typeof(this.pipe) === "undefined") this.pipe = {};
 
-        if (typeof(errorHandlerName) === "undefined") {
+        if (typeof(errorHandlerName) === "undefined" || errorHandlerName === null) {
             if (typeof(this.pipe.errorHandler) === "undefined")
                 this.pipe.errorHandler = null;
         } else {
             var funcs = errorHandlerName.split(" ").map(function(attr) {
-                return snooze.handlers[attr];
-            });
+                if (typeof(snooze.handlers[attr]) === "undefined") {
+                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.\n  -> in template \"" + this.id + "\"";
+                } else return snooze.handlers[attr];
+            }.bind(this));
 
             this.pipe.errorHandler = function(error) {
                 funcs.forEach(function(func) {
@@ -299,8 +308,12 @@ outer:      while(curToNodeChild) {
                 callback(snooze.pipes[pipeName]);
             }; this.pipe.type = "object";
         } else {
-            this.pipe.func = snooze.pipes[pipeName];
-            this.pipe.type = "custom";
+            if (typeof(snooze.pipes[pipeName]) === "undefined") {
+                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.\n  -> in template \"" + this.id + "\"";
+            } else {
+                this.pipe.func = snooze.pipes[pipeName];
+                this.pipe.type = "custom";
+            }
         }; this.refresh();
     },
     stopPoll: function() {
@@ -327,7 +340,7 @@ outer:      while(curToNodeChild) {
             return tag.type === "text/snooze";
         });
 
-        this.snooze.snoozes.forEach(function(snooze) {
+        this.snooze.snoozes.forEach(function(snooze, i) {
             snooze.gen      = this.gen.bind(snooze);
             snooze.refresh  = this.refresh.bind(snooze);
             snooze.setPipe  = this.setPipe.bind(snooze);
@@ -337,10 +350,14 @@ outer:      while(curToNodeChild) {
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
 
+            if (!snooze.hasAttribute("id")) snooze.id = "snooze_template_" + i;
+
             snooze.guards = [];
             if (snooze.hasAttribute("data-guard")) {
                 snooze.getAttribute("data-guard").split(" ").forEach(function(guard) {
-                    snooze.guards.push(this.guards[guard]);
+                    if (typeof(this.guards[guard]) === "undefined") {
+                        throw "snooze error: Guard \"" + guard + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
+                    } else snooze.guards.push(this.guards[guard]);
                 }.bind(this));
             }
 
