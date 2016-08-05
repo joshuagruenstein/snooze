@@ -255,7 +255,7 @@ outer:      while(curToNodeChild) {
                 code.replace(/[\r\t\n]/g, '')
             ).apply(this);
         } catch (error) {
-            error.name = "error in template " + this.id + ":\n    " + error.name;
+            error.message = error.message + "\n  -> in template \"" + this.id + "\"";
             throw error;
             return;
         }
@@ -285,7 +285,7 @@ outer:      while(curToNodeChild) {
         } else {
             var funcs = errorHandlerName.split(" ").map(function(attr) {
                 if (typeof(snooze.handlers[attr]) === "undefined") {
-                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.";
+                    throw "snooze error: Pipe error handler \"" + attr + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
                 } else return snooze.handlers[attr];
             });
 
@@ -307,7 +307,7 @@ outer:      while(curToNodeChild) {
             }; this.pipe.type = "object";
         } else {
             if (typeof(snooze.pipes[pipeName]) === "undefined") {
-                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.";
+                throw "snooze error: Pipe \"" + pipeName + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
             } else {
                 this.pipe.func = snooze.pipes[pipeName];
                 this.pipe.type = "custom";
@@ -348,14 +348,16 @@ outer:      while(curToNodeChild) {
             snooze.dom = document.createElement('div');
             snooze.parentNode.insertBefore(snooze.dom, snooze.nextSibling);
 
+            if (!snooze.hasAttribute("id")) snooze.id = "snooze_template_" + i;
+
             snooze.guards = [];
             if (snooze.hasAttribute("data-guard")) {
                 snooze.getAttribute("data-guard").split(" ").forEach(function(guard) {
-                    snooze.guards.push(this.guards[guard]);
+                    if (typeof(this.guards[guard]) === "undefined") {
+                        throw "snooze error: Guard \"" + guard + "\" does not exist.\n  -> in template \"" + snooze.id + "\"";
+                    } else snooze.guards.push(this.guards[guard]);
                 }.bind(this));
             }
-
-            if (!snooze.hasAttribute("id")) snooze.id = "snooze_template_" + i;
 
             if (snooze.hasAttribute("data-pipe-initial"))
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
