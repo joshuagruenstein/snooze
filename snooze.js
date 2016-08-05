@@ -250,10 +250,15 @@ outer:      while(curToNodeChild) {
         add(this.innerHTML.substr(cursor, this.innerHTML.length - cursor));
         code += 'return r.join("");';
 
-
-        var newHTML = new Function(
-            code.replace(/[\r\t\n]/g, '')
-        ).apply(this);
+        try {
+            var newHTML = new Function(
+                code.replace(/[\r\t\n]/g, '')
+            ).apply(this);
+        } catch (error) {
+            error.name = "error in template " + this.id + ":\n    " + error.name;
+            throw error;
+            return;
+        }
 
         snooze.minimorph(this.dom, newHTML);
     },
@@ -274,7 +279,7 @@ outer:      while(curToNodeChild) {
     setPipe: function(pipeName, errorHandlerName) {
         if (typeof(this.pipe) === "undefined") this.pipe = {};
 
-        if (typeof(errorHandlerName) === "undefined") {
+        if (typeof(errorHandlerName) === "undefined" || errorHandlerName === null) {
             if (typeof(this.pipe.errorHandler) === "undefined")
                 this.pipe.errorHandler = null;
         } else {
@@ -327,7 +332,7 @@ outer:      while(curToNodeChild) {
             return tag.type === "text/snooze";
         });
 
-        this.snooze.snoozes.forEach(function(snooze) {
+        this.snooze.snoozes.forEach(function(snooze, i) {
             snooze.gen      = this.gen.bind(snooze);
             snooze.refresh  = this.refresh.bind(snooze);
             snooze.setPipe  = this.setPipe.bind(snooze);
@@ -343,6 +348,8 @@ outer:      while(curToNodeChild) {
                     snooze.guards.push(this.guards[guard]);
                 }.bind(this));
             }
+
+            if (!snooze.hasAttribute("id")) snooze.id = "snooze_template_" + i;
 
             if (snooze.hasAttribute("data-pipe-initial"))
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
