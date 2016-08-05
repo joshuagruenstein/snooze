@@ -266,6 +266,9 @@ outer:      while(curToNodeChild) {
     },
     refresh: function() {
         this.pipe.func(function(newData) {
+            if (this.pipe.cache) {
+                localStorage.setItem('snz_'+this.id,JSON.stringify(newData));
+            }
 
             this.guards.forEach(function(func) {
                 newData = func(newData);
@@ -278,7 +281,7 @@ outer:      while(curToNodeChild) {
             snooze.setListeners(elements);
         }.bind(this));
     },
-    setPipe: function(pipeName, errorHandlerName) {
+    setPipe: function(pipeName, errorHandlerName, cache) {
         if (typeof(this.pipe) === "undefined") this.pipe = {};
 
         if (typeof(errorHandlerName) === "undefined" || errorHandlerName === null) {
@@ -314,7 +317,23 @@ outer:      while(curToNodeChild) {
                 this.pipe.func = snooze.pipes[pipeName];
                 this.pipe.type = "custom";
             }
-        }; this.refresh();
+        };
+
+        if (cache && typeof(cache) !== typeof(this.pipe.cache)) {
+            if (typeof(localStorage.getItem('snz_'+this.id)) !== "undefined" &&
+                localStorage.getItem('snz_'+this.id) !== "null") {
+
+                this.pipe.func = function(callback) {
+                    callback(JSON.parse(localStorage.getItem('snz_'+this.id)));
+                }.bind(this);
+
+                this.refresh();
+                this.pipe.cache = true;
+                this.setPipe(pipeName,errorHandlerName);
+            }
+        } this.pipe.cache = cache;
+
+        this.refresh();
     },
     stopPoll: function() {
         clearInterval(this.intervalID);
@@ -365,7 +384,8 @@ outer:      while(curToNodeChild) {
                 snooze.setPipe(snooze.getAttribute("data-pipe-initial"));
 
             snooze.setPipe(snooze.getAttribute("data-pipe"),
-                           snooze.getAttribute("data-pipe-error"));
+                           snooze.getAttribute("data-pipe-error"),
+                           snooze.hasAttribute("data-pipe-cache"));
 
             snooze.setPoll(snooze.getAttribute("data-period") || "default");
 
